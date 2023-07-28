@@ -1,13 +1,17 @@
-package org.example.fullstack.user;
+package org.example.fullstack.dto.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 
 @Entity
+@Data
 @Table(name="users")
 public class User extends PanacheEntity {
 
@@ -17,7 +21,7 @@ public class User extends PanacheEntity {
 
     //Password para cifrar
     @Column(nullable = false)
-    private String password;
+    public String password;
 
     //Para auditoría, muestra la fecha de creación
     @CreationTimestamp
@@ -34,4 +38,10 @@ public class User extends PanacheEntity {
     @Column(name = "role")
     private List<String>roles;
 
+
+
+    @JsonProperty("password")
+    public void setPassword(String password){
+        this.password = password;
+    }
 }

@@ -1,14 +1,16 @@
-package org.example.fullstack.project;
+package org.example.fullstack.dto.project;
 
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import jakarta.persistence.*;
-import org.example.fullstack.user.User;
+import lombok.Data;
+import org.example.fullstack.dto.user.User;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.ZonedDateTime;
 
 @Entity
+@Data
 @Table(name = "projects",uniqueConstraints = {
         @UniqueConstraint(columnNames = {"name","user_id"})
 })

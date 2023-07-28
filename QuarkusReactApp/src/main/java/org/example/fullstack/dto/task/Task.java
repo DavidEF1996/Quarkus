@@ -1,13 +1,16 @@
-package org.example.fullstack.task;
+package org.example.fullstack.dto.task;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import jakarta.persistence.*;
-import org.example.fullstack.project.Project;
+import lombok.Data;
+import org.example.fullstack.dto.project.Project;
+import org.example.fullstack.dto.user.User;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.ZonedDateTime;
 
 @Entity
+@Data
 @Table(name = "tasks")
 public class Task extends PanacheEntity {
 
@@ -18,6 +21,12 @@ public class Task extends PanacheEntity {
     private String description;
 
     private Integer priority;
+
+
+    @ManyToOne(optional = false)
+    private User user;
+
+    private ZonedDateTime complete;
 
     @ManyToOne
     private Project project;
