@@ -16,7 +16,7 @@ import org.jboss.resteasy.reactive.ResponseStatus;
 import java.util.List;
 
 @Path("/api/v1/users")
-@RolesAllowed("admin")
+@RolesAllowed("ROLE_ADMIN")
 public class UserResource {
 
     private final UserService userService;
@@ -28,6 +28,7 @@ public class UserResource {
 
 
     @GET
+    @RolesAllowed("ROLE_USER")
     public Uni<List<User>> get(){
         return userService.list();
     }
@@ -51,14 +52,15 @@ public class UserResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{id}")
+    @RolesAllowed("ROLE_USER")
     public Uni<User> updateUser (@PathParam("id") long id, User user){
-        user.id = id;
-        return userService.update(user);
+        return userService.updates(user, id);
     }
 
 
     @Delete
     @Path("{id}")
+    @RolesAllowed("ROLE_USER")
     public Uni<Void> deleteUser (@PathParam("id") long id){
         return userService.delete(id);
     }
@@ -66,6 +68,7 @@ public class UserResource {
 
     @GET
     @Path("self")
+    @RolesAllowed("ROLE_USER")
     public Uni<User> getCurrentUser (){
         return userService.getCurrentUser();
     }
@@ -74,7 +77,7 @@ public class UserResource {
 
     @PUT
     @Path("self/password")
-    @RolesAllowed("user")
+    @RolesAllowed("ROLE_USER")
     public Uni<User> changePassword(PasswordChange
                                             passwordChange) {
         return userService

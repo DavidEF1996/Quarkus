@@ -10,6 +10,9 @@ import org.example.fullstack.services.user.UserService;
 
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class AuthService {
@@ -31,9 +34,10 @@ public class AuthService {
                     if (user == null || !UserService.matches(user, authRequest.password())) {
                         throw new AuthenticationFailedException("Invalid credentials");
                     }
+                    Set<String> roles = user.getRoles().stream().map(role -> role.getRole()).collect(Collectors.toSet());
                     return Jwt.issuer(issuer)
                             .upn(user.getName())
-                            .groups(new HashSet<>(user.getRoles()))
+                            .groups(roles)
                             .expiresIn(Duration.ofHours(1L))
                             .sign();
                 });

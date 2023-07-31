@@ -20,6 +20,7 @@ public class Task extends PanacheEntity {
     @Column(length = 1000)
     private String description;
 
+    @Column(length = 1000)
     private Integer priority;
 
 

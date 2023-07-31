@@ -2,6 +2,7 @@ package org.example.fullstack.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.arc.Lock;
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -33,11 +34,17 @@ public class User extends PanacheEntity {
     private int version;
 
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "id"))
-    @Column(name = "role")
-    private List<String>roles;
-
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "users_role",
+            joinColumns = @JoinColumn(name = "users_id"),
+            inverseJoinColumns = @JoinColumn(name="role_id"),
+            uniqueConstraints =
+                    {
+                            @UniqueConstraint(columnNames = {"users_id", "role_id"}) // no se puede repetir el rol para un usuario
+                    }
+    )
+    private List<Role> roles;
 
 
     @JsonProperty("password")

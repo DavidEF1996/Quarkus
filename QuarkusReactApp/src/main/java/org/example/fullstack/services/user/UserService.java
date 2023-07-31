@@ -1,11 +1,15 @@
 package org.example.fullstack.services.user;
 
+import io.quarkus.arc.Lock;
+import io.quarkus.arc.WithCaching;
 import io.quarkus.elytron.security.common.BcryptUtil;
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
@@ -13,7 +17,9 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.example.fullstack.dto.project.Project;
 import org.example.fullstack.dto.task.Task;
 import org.example.fullstack.dto.user.User;
+import org.hibernate.LockMode;
 import org.hibernate.ObjectNotFoundException;
+import org.hibernate.Transaction;
 
 import java.util.List;
 
@@ -29,79 +35,81 @@ public class UserService {
 
     //Métodos para listar
     @WithTransaction
-    public Uni<User> findById(long id){
-        return User.<User>findById(id).onItem().ifNull().failWith(()-> new
-                ObjectNotFoundException(id,"User"));
+    public Uni<User> findById(long id) {
+        return User.<User>findById(id).onItem().ifNull().failWith(() -> new
+                ObjectNotFoundException(id, "User"));
     }
 
     @WithTransaction
-    public Uni<User> findByName(String name){
+    public Uni<User> findByName(String name) {
         return User.<User>find("name", name).firstResult();
     }
 
 
     @WithTransaction
-    public Uni<List<User>> list (){
+    public Uni<List<User>> list() {
         return getCurrentUser().chain(u -> {
-            if(u==null){
+            if (u == null) {
                 throw new ClientErrorException("Las credenciales fallaron", Response.Status.CONFLICT);
             }
-            return  User.listAll();
+            return User.listAll();
         });
 
     }
 
 
-
-
     @WithTransaction
-    public Uni<User>create(User user){
+    public Uni<User> create(User user) {
         user.setPassword(BcryptUtil.bcryptHash(user.getPassword()));
         return user.persistAndFlush();
     }
 
+
     @WithTransaction
-    public Uni<User> update (User user){
-        return findById(user.id)
-                .chain(u -> {
-                   user.setPassword(u.getPassword());
-                   return User.getSession();
+    public Uni<User> updates(User user, long id) {
+        return findById(id)
+                .onItem().ifNotNull()
+                .transform(entity -> {
+                    entity.setName(user.getName());
+                    entity.setRoles(user.getRoles());
+                    entity.setVersion(entity.getVersion()+1);
+                    return entity;
                 })
-                .chain(s -> s.merge(user));
+                .onFailure().recoverWithNull();
     }
 
     @WithTransaction
-    public Uni<Void> delete (long id){
+    public Uni<Void> delete(long id) {
         return findById(id)
                 .chain(u -> Uni.combine().all().unis(
-                        Task.delete("user.id",u.id),
-                        Project.delete("user.id", u.id)
-                ).asTuple()
+                                Task.delete("user.id", u.id),
+                                Project.delete("user.id", u.id)
+                        ).asTuple()
                         .chain(t -> u.delete()));
 
     }
 
     @WithTransaction
-    public Uni<User> cambiarContrasena (String contrasenaActual, String nuevaContrasena){
+    public Uni<User> cambiarContrasena(String contrasenaActual, String nuevaContrasena) {
         return getCurrentUser()
-                    .chain(u-> {
-                   if(!matches(u, contrasenaActual)){
-                       throw new ClientErrorException("Las credenciales fallaron", Response.Status.CONFLICT);
-                   }
-                   u.setPassword(BcryptUtil.bcryptHash(nuevaContrasena));
-                   return u.persistAndFlush();
+                .chain(u -> {
+                    if (!matches(u, contrasenaActual)) {
+                        throw new ClientErrorException("Las credenciales fallaron", Response.Status.CONFLICT);
+                    }
+                    u.setPassword(BcryptUtil.bcryptHash(nuevaContrasena));
+                    return u.persistAndFlush();
                 });
     }
 
 
-    public Uni<User> getCurrentUser(){
+    public Uni<User> getCurrentUser() {
         return findByName(jwt.getName());
     }
 
 
-    public static boolean matches (User user, String password){
+    public static boolean matches(User user, String password) {
 
-        return BcryptUtil.matches(password,user.getPassword() );
+        return BcryptUtil.matches(password, user.getPassword());
     }
 
 

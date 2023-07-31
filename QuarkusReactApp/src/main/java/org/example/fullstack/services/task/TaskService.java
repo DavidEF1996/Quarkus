@@ -9,6 +9,7 @@ import org.example.fullstack.services.user.UserService;
 import org.hibernate.ObjectNotFoundException;
 
 import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 @ApplicationScoped
@@ -53,11 +54,19 @@ public class TaskService {
     }
 
     @WithTransaction
-    public Uni<Task> update(Task task)
+    public Uni<Task> update(Task task, long id)
     {
-        return findById(task.id)
-                .chain(t -> Task.getSession())
-                .chain(s -> s.merge(task));
+        return findById(id)
+                .onItem().ifNotNull()
+                .transform(entity ->{
+                    entity.setTitle(task.getTitle());
+                    entity.setDescription(task.getDescription());
+                    entity.setVersion(entity.getVersion()+1);
+                    entity.setPriority(task.getPriority());
+                    return entity;
+                })
+                .onFailure().recoverWithNull();
+
     }
 
 
@@ -67,13 +76,21 @@ public class TaskService {
                 .chain(Task::delete);
     }
     @WithTransaction
-    public Uni<Boolean> setComplete (long id, boolean complete)
+    public Uni<Task> setComplete (long id, boolean complete)
     {
         return findById(id)
-                .chain(task -> {
-                    task.setComplete(complete ? ZonedDateTime.now():null);
-                    return task.persistAndFlush();
+                .onItem().ifNotNull()
+                .transform(entity->{
+                    ZonedDateTime zonedDateTime = ZonedDateTime.now();
+                    if(complete){
+                        entity.setComplete(zonedDateTime);
+                    }else {
+                        entity.setComplete(null);
+                    }
+                    return entity;
+
                 })
-                .chain(task-> Uni.createFrom().item(complete));
+                .onFailure().recoverWithNull();
+
     }
 }

@@ -15,7 +15,7 @@ import org.jboss.resteasy.reactive.ResponseStatus;
 import java.util.List;
 
 @Path("/api/v1/projects")
-@RolesAllowed("user")
+@RolesAllowed("ROLE_USER")
 public class ProjectResource {
 
     private final ProjectService projectService;
@@ -27,12 +27,14 @@ public class ProjectResource {
 
 
     @GET
+    @RolesAllowed("ROLE_USER")
     public Uni<List<Project>> get(){
         return projectService.listForUser();
     }
 
     @GET
     @Path("{id}")
+    @RolesAllowed("ROLE_USER")
     public Uni<Project> getById (@PathParam("id") long id){
         return projectService.findById(id);
     }
@@ -40,6 +42,7 @@ public class ProjectResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @ResponseStatus(201)
+    @RolesAllowed("ROLE_USER")
     public Uni<Project> createProject (Project project){
         return projectService.create(project);
     }
@@ -48,13 +51,15 @@ public class ProjectResource {
     @PUT
     @Consumes (MediaType.APPLICATION_JSON)
     @Path("{id}")
+    @RolesAllowed("ROLE_USER")
     public Uni<Project> updateProject (@PathParam("id") long id, Project project){
-        project.id=id;
-        return projectService.update(project);
+
+        return projectService.update(project, id);
     }
 
 
     @Delete
+    @RolesAllowed("ROLE_USER")
     @Path("{id}")
     public Uni<Void> deleteProject(@PathParam("id")long id){
         return projectService.delete(id);

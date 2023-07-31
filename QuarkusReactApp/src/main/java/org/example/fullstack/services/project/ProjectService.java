@@ -52,10 +52,15 @@ public class ProjectService {
     }
 
     @WithTransaction
-    public Uni<Project> update (Project project){
-        return findById(project.id)
-                .chain(p->Project.getSession())
-                .chain(s -> s.merge(project));
+    public Uni<Project> update (Project project, long id){
+        return findById(id)
+                .onItem().ifNotNull()
+                .transform(entity ->{
+                    entity.setName(project.getName());
+                    entity.setVersion(entity.getVersion()+1);
+                    return entity;
+                })
+                .onFailure().recoverWithNull();
     }
 
 

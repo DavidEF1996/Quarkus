@@ -13,7 +13,7 @@ import org.jboss.resteasy.reactive.ResponseStatus;
 import java.util.List;
 
 @Path("/api/v1/tasks/")
-@RolesAllowed("user")
+@RolesAllowed("ROLE_USER")
 public class TaskResource {
 
 
@@ -26,12 +26,14 @@ public class TaskResource {
 
 
     @GET
+    @RolesAllowed("ROLE_USER")
     public Uni<List<Task>> listaTareas (){
         return taskService.listForUser();
     }
 
     @GET
     @Path("{id}")
+    @RolesAllowed("ROLE_USER")
     public Uni<Task> tareasPorId(@PathParam("id") long id){
         return taskService.findById(id);
     }
@@ -40,6 +42,7 @@ public class TaskResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @ResponseStatus(201)
+    @RolesAllowed("ROLE_USER")
     public Uni<Task> crearTarea(Task task){
         return taskService.create(task);
     }
@@ -48,21 +51,25 @@ public class TaskResource {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{id}")
+    @RolesAllowed("ROLE_USER")
     public Uni<Task> actualizarTarea (@PathParam("id")long id, Task task){
-        task.id=id;
-        return taskService.update(task);
+
+        return taskService.update(task, id);
     }
 
     @Delete
     @Path("{id}")
+    @RolesAllowed("ROLE_USER")
     public Uni<Void> eliminarTarea(@PathParam("id") long id){
         return taskService.delete(id);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("{id}/complete")
-    public Uni<Boolean> completarTarea(@PathParam("id")long id, boolean complete){
+    @Path("complete/{id}/{complete}")
+    @RolesAllowed("ROLE_USER")
+    public Uni<Task> completarTarea(@PathParam("id")long id, @PathParam("complete")boolean complete){
+        System.out.println("llego");
        return  taskService.setComplete(id, complete);
     }
 }
